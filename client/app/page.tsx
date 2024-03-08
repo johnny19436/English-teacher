@@ -1,48 +1,48 @@
 'use client';
 
-import { useCallback, useState } from "react";
-import MessageArea from "./message-area";
+import { useCallback, useState, createContext, useContext, useReducer, Dispatch } from "react";
+
+import { chatReducer, Chat, Message, ChatReducerAction } from "./reducers/chat";
+
+import MessageArea from "./components/message-area";
+import MessageInput from "./components/message-input";
+
+const ChatContext = createContext<Chat | null>(null);
+const ChatDispatchContext = createContext<Dispatch<ChatReducerAction> | null>(null);
+
+export const useChat = () => useContext(ChatContext)!;
+
+export const useChatDispatch = () => useContext(ChatDispatchContext)!;
+
+const messages: Message[] = [{
+  id: '1',
+  date: new Date(),
+  sender: 'user',
+  text: 'aboba'
+}];
 
 export default function Home() {
-  const [value, setValue] = useState("");
-  const [messages, setMessages] = useState<string[]>([]);
-  
-  const sendMessage = async (event: any) => {
-    event.preventDefault();
+  const [chat, dispatch] = useReducer(chatReducer, { userId: "1", chatId: "1", messages });
 
-    const formData = new FormData(event.target);
-
-    setMessages([...messages, value]);
-    setValue("");
-
-    try {
-      const request = await fetch('http://localhost:4000/chat', {
-        method: 'POST',
-        body: formData
-      });
-    } catch(err) {
-      console.error(err);
-    }
-  };
-  
   return (
-    <main>
-      <div className="container">
-        <div className="chat-box">Hello! How can I help you?</div>
-        
-        <MessageArea messages={messages}/>
+    <ChatContext.Provider value={chat}>
+      <ChatDispatchContext.Provider value={dispatch}>
 
-        <form method="post" onSubmit={sendMessage}>
-            <input 
-              type="text" 
-              name="message"
-              placeholder="Type your message..."
-              value={value}
-              onChange={e => setValue(e.target.value)}/>
+        <div className="chat-wrapper w-full h-screen bg-blue-50">
+          <div className='chat-container h-full flex flex-col items-center p-8'>
 
-            <input type="submit"/>
-        </form>
-      </div>
-    </main>
+            <div className="grow h-full w-8/12 no-scrollbar overflow-y-scroll overflow-x-hidden">
+              <MessageArea/>
+            </div>
+            
+            <div className="h-14 w-8/12 pt-4">
+              <MessageInput/>
+            </div>
+          
+          </div>
+        </div>
+
+      </ChatDispatchContext.Provider>
+    </ChatContext.Provider>
   );
 }
